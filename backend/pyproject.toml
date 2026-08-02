@@ -66,6 +66,7 @@ testpaths = ["tests"]
 addopts = "-q --strict-markers"
 markers = [
     "integration: tests that touch the database or external services",
+    "slow: tests that download or run a real embedding model",
 ]
 
 [tool.coverage.run]
