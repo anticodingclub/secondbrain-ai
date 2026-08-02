@@ -13,7 +13,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.core.exceptions import SecondBrainError
+from app.api.cookies import clear_refresh_cookie
+from app.core.exceptions import InvalidSessionError, SecondBrainError
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -34,10 +35,20 @@ async def _domain_error_handler(request: Request, exc: Exception) -> JSONRespons
     assert isinstance(exc, SecondBrainError)
     if exc.status_code >= 500:
         logger.error("domain_error", error_code=exc.error_code, message=exc.message)
-    return JSONResponse(
+
+    response = JSONResponse(
         status_code=exc.status_code,
         content=_envelope(request, error=exc.error_code, message=exc.message, details=exc.details),
     )
+
+    # A handler that mutates its injected Response and then raises loses those
+    # mutations — the raise discards that response and we build a fresh one
+    # here. So the dead cookie has to be cleared on *this* response, or the
+    # client keeps retrying with a token that will never work again.
+    if isinstance(exc, InvalidSessionError):
+        clear_refresh_cookie(response)
+
+    return response
 
 
 async def _http_error_handler(request: Request, exc: Exception) -> JSONResponse:

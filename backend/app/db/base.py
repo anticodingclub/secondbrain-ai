@@ -8,8 +8,9 @@ from typing import Any, ClassVar
 
 from sqlalchemy import DateTime, MetaData, func
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.types import JSON, Uuid
+from sqlalchemy.types import JSON, TypeDecorator, Uuid
 
 # Explicit naming so Alembic emits stable, human-readable constraint names and
 # can autogenerate DROP statements for them across both backends.
@@ -26,6 +27,34 @@ JSONType = JSON().with_variant(postgresql.JSONB(), "postgresql")
 
 #: Native UUID on Postgres, CHAR(32) elsewhere — one Python type, two storages.
 UUIDType = Uuid(as_uuid=True)
+
+
+class UTCDateTime(TypeDecorator[datetime]):
+    """Timezone-aware UTC datetimes on every backend.
+
+    SQLite has no native timestamptz: it stores the string and hands back a
+    *naive* datetime, while Postgres returns an aware one. Comparing the two
+    raises ``TypeError``, so without this the same code silently works in
+    production and crashes in development — or vice versa, which is worse.
+
+    Normalising in the type keeps every call site free of defensive tzinfo
+    checks.
+    """
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("Naive datetimes are not accepted; use datetime.now(UTC).")
+        return value.astimezone(UTC)
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is None:
+            return None
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def utcnow() -> datetime:
@@ -48,10 +77,10 @@ class UUIDPrimaryKeyMixin:
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), default=utcnow, sort_order=100
+        UTCDateTime, server_default=func.now(), default=utcnow, sort_order=100
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime,
         server_default=func.now(),
         default=utcnow,
         onupdate=utcnow,

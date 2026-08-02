@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any, Generic, Protocol, TypeVar, cast
 
-from sqlalchemy import CursorResult, Select, delete, func, select
+from sqlalchemy import CursorResult, Executable, Select, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
@@ -84,9 +84,19 @@ class SQLAlchemyRepository(Generic[ModelT]):
         await self.session.flush()
         return entities
 
+    async def execute_returning_rowcount(self, statement: Executable) -> int:
+        """Run a bulk UPDATE/DELETE and report how many rows it touched.
+
+        ``Session.execute`` is typed as returning ``Result``, which has no
+        ``rowcount``; only the ``CursorResult`` a DML statement actually
+        produces does. Narrowing it once here keeps the cast out of every
+        subclass.
+        """
+        result = cast("CursorResult[Any]", await self.session.execute(statement))
+        return int(result.rowcount or 0)
+
     async def delete(self, entity_id: uuid.UUID) -> bool:
-        result = cast(
-            "CursorResult[Any]",
-            await self.session.execute(delete(self.model).where(self.model.id == entity_id)),
+        deleted = await self.execute_returning_rowcount(
+            delete(self.model).where(self.model.id == entity_id)
         )
-        return bool(result.rowcount)
+        return bool(deleted)

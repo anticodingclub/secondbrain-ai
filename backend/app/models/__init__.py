@@ -6,6 +6,7 @@ are registered on ``Base.metadata`` at import time.
 
 from app.models.collection import Collection, CollectionKind
 from app.models.document import Document, DocumentChunk, DocumentStatus, SourceType
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "DocumentStatus",
+    "RefreshToken",
     "SourceType",
     "User",
 ]

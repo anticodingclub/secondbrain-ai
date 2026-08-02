@@ -144,6 +144,17 @@ class Settings(BaseSettings):
         return self.database_url.startswith("sqlite")
 
     @property
+    def cookie_secure(self) -> bool:
+        """Whether auth cookies are restricted to HTTPS.
+
+        Off for development and tests, which are served over plain HTTP: a
+        `secure` cookie there is silently dropped, which presents as a login
+        that succeeds and then immediately forgets you — a confusing symptom
+        for a configuration cause.
+        """
+        return self.environment not in {Environment.DEVELOPMENT, Environment.TEST}
+
+    @property
     def qdrant_is_embedded(self) -> bool:
         """True when Qdrant runs in-process against a local path instead of a server."""
         return not self.qdrant_url

@@ -58,6 +58,18 @@ class AuthenticationError(SecondBrainError):
     default_message = "Authentication is required."
 
 
+class InvalidSessionError(AuthenticationError):
+    """The refresh session is unusable and its cookie must be discarded.
+
+    Distinct from a plain ``AuthenticationError`` so the API layer knows to
+    clear the refresh cookie; without that, a client holding a dead token
+    retries with it indefinitely.
+    """
+
+    error_code = "invalid_session"
+    default_message = "Your session is no longer valid. Please sign in again."
+
+
 class AuthorizationError(SecondBrainError):
     status_code = 403
     error_code = "forbidden"
