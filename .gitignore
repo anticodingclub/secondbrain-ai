@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Application data (uploads, sqlite db, embedded qdrant, model cache)
+data/
+storage/
+*.db
+*.sqlite3
+.models/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
