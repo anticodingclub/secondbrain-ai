@@ -1,7 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { LogOut, Search, Settings } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
+import { useAuth } from "@/components/auth-provider";
 import { useReadiness } from "@/hooks/use-system-info";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +27,86 @@ function StatusDot() {
   );
 }
 
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function UserMenu() {
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  if (!user) return null;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Account menu for ${user.display_name}`}
+        className="grid size-8 place-items-center rounded-full bg-surface text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+      >
+        {initialsOf(user.display_name)}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="animate-scale-in absolute right-0 top-10 z-50 w-56 overflow-hidden rounded-sb border border-border-strong bg-surface shadow-xl shadow-black/40"
+        >
+          <div className="border-b border-border px-3 py-2.5">
+            <p className="truncate text-sm font-medium">{user.display_name}</p>
+            <p className="truncate text-xs text-subtle">{user.email}</p>
+          </div>
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-muted hover:bg-surface-hover hover:text-foreground"
+          >
+            <Settings className="size-4" />
+            Settings
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void logout()}
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-muted hover:bg-surface-hover hover:text-foreground"
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Topbar({ onOpenPalette }: { onOpenPalette: () => void }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-4 md:px-6">
@@ -39,8 +122,9 @@ export function Topbar({ onOpenPalette }: { onOpenPalette: () => void }) {
         </kbd>
       </button>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-4">
         <StatusDot />
+        <UserMenu />
       </div>
     </header>
   );

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import { AppShell } from "@/components/shell/app-shell";
+import { AuthProvider } from "@/components/auth-provider";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -23,8 +23,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
+        {/* AuthProvider sits inside Providers because signing out clears the
+            React Query cache, so it needs the QueryClient in scope. */}
         <Providers>
-          <AppShell>{children}</AppShell>
+          <AuthProvider>{children}</AuthProvider>
         </Providers>
       </body>
     </html>

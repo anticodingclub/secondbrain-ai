@@ -48,3 +48,35 @@ export interface SystemInfo {
   llm_model: string;
   storage_backend: string;
 }
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  display_name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+/**
+ * Note the absence of a refresh token: it lives in an httpOnly cookie that
+ * JavaScript deliberately cannot read.
+ */
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  display_name: string;
+}

@@ -32,5 +32,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Documents", icon: Upload, phase: 3 },
   { label: "Collections", icon: FolderTree, phase: 3 },
   { label: "Repositories", icon: FolderGit2, phase: 9 },
-  { label: "Settings", icon: Settings, phase: 2 },
+  { label: "Settings", icon: Settings, phase: 2, href: "/settings" },
 ];
