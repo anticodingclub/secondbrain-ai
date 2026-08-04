@@ -80,3 +80,63 @@ export interface RegisterPayload {
   password: string;
   display_name: string;
 }
+
+// ─── Documents ──────────────────────────────────────────────────────────────
+
+export type DocumentStatus =
+  | "pending"
+  | "parsing"
+  | "chunking"
+  | "embedding"
+  | "indexed"
+  | "failed";
+
+export type SourceType = "upload" | "folder_sync" | "github" | "url";
+
+export interface DocumentRecord {
+  id: string;
+  title: string;
+  original_filename: string;
+  mime_type: string;
+  extension: string;
+  size_bytes: number;
+  content_hash: string;
+  status: DocumentStatus;
+  source_type: SourceType;
+  collection_id: string | null;
+  error_message: string | null;
+  page_count: number | null;
+  word_count: number | null;
+  chunk_count: number;
+  language: string | null;
+  doc_metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UploadResponse {
+  document: DocumentRecord;
+  was_duplicate: boolean;
+}
+
+export interface Page<ItemT> {
+  items: ItemT[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface DocumentFilters {
+  status?: DocumentStatus;
+  extensions?: string[];
+  collectionId?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface StorageUsage {
+  document_count: number;
+  total_bytes: number;
+  max_upload_bytes: number;
+}

@@ -4,9 +4,9 @@ A local-first personal search engine. Index everything you own — documents,
 code, notes, images — then ask questions in plain language and get answers
 grounded in your own files, with citations back to the exact page.
 
-> **Status: Phase 2 of 10 complete.** Architecture, persistence, dependency
-> injection, provider interfaces, the application shell and authentication are
-> built, tested and running. See the [roadmap](#roadmap).
+> **Status: Phase 3 of 10 complete.** Architecture, persistence, dependency
+> injection, provider interfaces, the application shell, authentication and
+> file uploads are built, tested and running. See the [roadmap](#roadmap).
 
 ---
 
@@ -172,7 +172,7 @@ which keeps them order-independent and parallel-safe.
 | --- | --- | --- |
 | 1 | Architecture, persistence, DI, provider interfaces, app shell | **Done** |
 | 2 | Authentication — argon2, rotating JWT refresh, tenant isolation | **Done** |
-| 3 | File uploads — drag-and-drop, chunked transfer, dedupe, storage abstraction | Next |
+| 3 | File uploads — drag-and-drop, streaming, dedupe, storage abstraction | **Done** |
 | 4 | Parsing — PDF, DOCX, PPTX, XLSX, HTML, code, plus OCR | |
 | 5 | Chunking and embeddings — recursive and semantic strategies, incremental re-index | |
 | 6 | Search — semantic, hybrid (BM25 + dense), metadata filters, reranking | |

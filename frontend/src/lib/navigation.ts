@@ -29,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, phase: 1, href: "/" },
   { label: "Search", icon: Search, phase: 6 },
   { label: "Chat", icon: MessagesSquare, phase: 7 },
-  { label: "Documents", icon: Upload, phase: 3 },
+  { label: "Documents", icon: Upload, phase: 3, href: "/documents" },
   { label: "Collections", icon: FolderTree, phase: 3 },
   { label: "Repositories", icon: FolderGit2, phase: 9 },
   { label: "Settings", icon: Settings, phase: 2, href: "/settings" },
