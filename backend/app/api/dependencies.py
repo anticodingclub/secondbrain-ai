@@ -18,10 +18,13 @@ from app.core.container import Container
 from app.core.exceptions import AuthenticationError
 from app.core.logging import user_id_var
 from app.models.user import User
+from app.repositories.document import DocumentRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
 from app.services.embeddings import EmbeddingProvider
+from app.services.storage import ObjectStorage
+from app.services.uploads import UploadService
 from app.services.vectorstore import VectorStore
 
 
@@ -124,3 +127,30 @@ async def get_optional_user(
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
+
+
+# ── Documents ────────────────────────────────────────────────────────────────
+
+
+def get_object_storage(container: ContainerDep) -> ObjectStorage:
+    return container.object_storage
+
+
+def get_document_repository(session: SessionDep) -> DocumentRepository:
+    return DocumentRepository(session)
+
+
+DocumentRepositoryDep = Annotated[DocumentRepository, Depends(get_document_repository)]
+ObjectStorageDep = Annotated[ObjectStorage, Depends(get_object_storage)]
+
+
+def get_upload_service(
+    session: SessionDep,
+    documents: DocumentRepositoryDep,
+    storage: ObjectStorageDep,
+    settings: SettingsDep,
+) -> UploadService:
+    return UploadService(session=session, documents=documents, storage=storage, settings=settings)
+
+
+UploadServiceDep = Annotated[UploadService, Depends(get_upload_service)]

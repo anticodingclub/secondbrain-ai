@@ -17,6 +17,7 @@ from app.core.config import Settings
 from app.core.logging import get_logger
 from app.db.session import create_engine, create_session_factory
 from app.services.embeddings import EmbeddingProvider, build_embedding_provider
+from app.services.storage import ObjectStorage, build_object_storage
 from app.services.vectorstore import VectorStore, build_vector_store
 
 logger = get_logger(__name__)
@@ -29,6 +30,7 @@ class Container:
     session_factory: async_sessionmaker[AsyncSession]
     vector_store: VectorStore
     embedding_provider: EmbeddingProvider
+    object_storage: ObjectStorage
 
     @classmethod
     def build(cls, settings: Settings) -> Container:
@@ -39,10 +41,13 @@ class Container:
             session_factory=create_session_factory(engine),
             vector_store=build_vector_store(settings),
             embedding_provider=build_embedding_provider(settings),
+            object_storage=build_object_storage(settings),
         )
 
     async def startup(self) -> None:
         """Bring dependencies to a ready state before traffic is accepted."""
+        # Fail here rather than on the first upload if the path is unwritable.
+        self.settings.storage_path.mkdir(parents=True, exist_ok=True)
         await self.vector_store.ensure_collection(dimensions=self.embedding_provider.dimensions)
         logger.info(
             "container_started",

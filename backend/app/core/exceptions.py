@@ -58,6 +58,19 @@ class AuthenticationError(SecondBrainError):
     default_message = "Authentication is required."
 
 
+class ObjectNotFoundError(SecondBrainError):
+    """A storage key points at bytes that are not there.
+
+    Distinct from NotFoundError: the database row exists but its object does
+    not, which means storage and metadata have drifted apart — a condition
+    worth alerting on rather than reporting as an ordinary 404.
+    """
+
+    status_code = 500
+    error_code = "storage_object_missing"
+    default_message = "The stored file could not be read."
+
+
 class InvalidSessionError(AuthenticationError):
     """The refresh session is unusable and its cookie must be discarded.
 

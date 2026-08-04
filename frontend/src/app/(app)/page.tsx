@@ -6,20 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReadiness, useSystemInfo } from "@/hooks/use-system-info";
+import { ROADMAP } from "@/lib/roadmap";
 import { cn } from "@/lib/utils";
-
-const ROADMAP = [
-  { phase: 1, title: "Architecture & scaffold", done: true },
-  { phase: 2, title: "Authentication", done: false },
-  { phase: 3, title: "File uploads", done: false },
-  { phase: 4, title: "Document parsing & OCR", done: false },
-  { phase: 5, title: "Chunking & embeddings", done: false },
-  { phase: 6, title: "Vector & hybrid search", done: false },
-  { phase: 7, title: "RAG chat with citations", done: false },
-  { phase: 8, title: "Dashboard & analytics", done: false },
-  { phase: 9, title: "GitHub repository indexing", done: false },
-  { phase: 10, title: "Production deployment", done: false },
-];
 
 function StatCard({
   icon: Icon,
