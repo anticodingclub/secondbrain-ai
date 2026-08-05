@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy.types import TypeEngine
 
 from app.core.config import get_settings
-from app.db.base import Base, JSONType
+from app.db.base import Base, JSONType, UTCDateTime
 from app.db.session import ensure_sqlite_directory
 from app.models import *  # noqa: F401,F403  (registers every table on Base.metadata)
 
@@ -30,15 +30,30 @@ target_metadata = Base.metadata
 
 
 def _render_item(type_: str, obj: object, autogen_context: AutoGenContext) -> str | bool:
-    """Render our dialect-variant types as valid, readable code.
+    """Render our custom types as plain SQLAlchemy types.
 
-    Left to itself, autogenerate emits the JSONB variant as
-    ``postgresql.JSONB(astext_type=Text())`` with ``Text`` unqualified, which
-    does not import and breaks the migration at runtime.
+    Two problems autogenerate creates on its own:
+
+    ``JSONType`` is emitted as ``postgresql.JSONB(astext_type=Text())`` with
+    ``Text`` unqualified, which does not import and fails at runtime.
+
+    ``UTCDateTime`` is emitted as ``app.db.base.UTCDateTime(...)``, which fails
+    the same way — and should not appear at all. A migration describes a
+    *schema*, not the Python types that happened to produce it. Referencing
+    application code binds an immutable migration to a layer that will be
+    refactored, so a rename years from now would break history that already
+    ran everywhere.
     """
-    if type_ == "type" and isinstance(obj, TypeEngine) and obj is JSONType:
+    if type_ != "type" or not isinstance(obj, TypeEngine):
+        return False
+
+    if obj is JSONType:
         autogen_context.imports.add("from sqlalchemy.dialects import postgresql")
         return "sa.JSON().with_variant(postgresql.JSONB(), 'postgresql')"
+
+    if isinstance(obj, UTCDateTime):
+        return "sa.DateTime(timezone=True)"
+
     return False
 
 

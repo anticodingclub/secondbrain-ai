@@ -19,10 +19,12 @@ from app.core.exceptions import AuthenticationError
 from app.core.logging import user_id_var
 from app.models.user import User
 from app.repositories.chunk import ChunkRepository
+from app.repositories.conversation import ChatMessageRepository, ConversationRepository
 from app.repositories.document import DocumentRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
+from app.services.chat import ChatService
 from app.services.embeddings import EmbeddingProvider
 from app.services.indexing import IndexingService
 from app.services.parsing.pipeline import ParsingService
@@ -206,3 +208,32 @@ def get_retrieval_service(
 
 
 RetrievalServiceDep = Annotated[RetrievalService, Depends(get_retrieval_service)]
+
+
+# ── Chat ─────────────────────────────────────────────────────────────────────
+
+
+def get_conversation_repository(session: SessionDep) -> ConversationRepository:
+    return ConversationRepository(session)
+
+
+def get_message_repository(session: SessionDep) -> ChatMessageRepository:
+    return ChatMessageRepository(session)
+
+
+ConversationRepositoryDep = Annotated[ConversationRepository, Depends(get_conversation_repository)]
+MessageRepositoryDep = Annotated[ChatMessageRepository, Depends(get_message_repository)]
+
+
+def get_chat_service(
+    session: SessionDep, container: ContainerDep, retrieval: RetrievalServiceDep
+) -> ChatService:
+    return ChatService(
+        session=session,
+        session_factory=container.session_factory,
+        retrieval=retrieval,
+        llm=container.llm_provider,
+    )
+
+
+ChatServiceDep = Annotated[ChatService, Depends(get_chat_service)]

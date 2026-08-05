@@ -18,6 +18,7 @@ from app.core.logging import get_logger
 from app.db.session import create_engine, create_session_factory
 from app.services.chunking import ChunkingStrategy, build_chunker
 from app.services.embeddings import EmbeddingProvider, build_embedding_provider
+from app.services.llm import LLMProvider, build_llm_provider
 from app.services.parsing import ParserRegistry, build_parser_registry
 from app.services.storage import ObjectStorage, build_object_storage
 from app.services.vectorstore import VectorStore, build_vector_store
@@ -35,6 +36,7 @@ class Container:
     object_storage: ObjectStorage
     parser_registry: ParserRegistry
     chunker: ChunkingStrategy
+    llm_provider: LLMProvider
 
     @classmethod
     def build(cls, settings: Settings) -> Container:
@@ -48,6 +50,7 @@ class Container:
             object_storage=build_object_storage(settings),
             parser_registry=build_parser_registry(),
             chunker=build_chunker(settings),
+            llm_provider=build_llm_provider(settings),
         )
 
     async def startup(self) -> None:
@@ -65,6 +68,7 @@ class Container:
 
     async def shutdown(self) -> None:
         """Release resources in reverse order of acquisition."""
+        await self.llm_provider.aclose()
         await self.embedding_provider.aclose()
         await self.vector_store.aclose()
         await self.engine.dispose()

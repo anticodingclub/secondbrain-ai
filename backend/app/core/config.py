@@ -87,9 +87,16 @@ class Settings(BaseSettings):
     #: Overlap carried between adjacent chunks, so a sentence spanning a
     #: boundary is still retrievable from at least one side.
     chunk_overlap_chars: int = Field(default=200, ge=0, le=2000)
-    #: Below this a chunk is noise — a stray heading or page number that
+    #: Below this a chunk is noise — a stray page number or a lone word that
     #: matches everything weakly and nothing well.
-    chunk_min_chars: int = Field(default=60, ge=0)
+    #:
+    #: Kept low on purpose. This started at 60 and silently discarded a real
+    #: section ("Deployment: the Dockerfile builds on python:3.11-slim" is 54
+    #: characters), so a question about the Dockerfile could never be answered
+    #: — the passage had been thrown away at index time with nothing to show
+    #: for it. Short facts are exactly what people search for; the noise this
+    #: guards against is under 20 characters.
+    chunk_min_chars: int = Field(default=24, ge=0)
     #: Vectors sent to Qdrant per upsert.
     index_batch_size: int = Field(default=64, ge=1, le=512)
 
