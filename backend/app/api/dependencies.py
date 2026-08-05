@@ -26,6 +26,7 @@ from app.services.auth import AuthService
 from app.services.embeddings import EmbeddingProvider
 from app.services.indexing import IndexingService
 from app.services.parsing.pipeline import ParsingService
+from app.services.retrieval import RetrievalService
 from app.services.storage import ObjectStorage
 from app.services.uploads import UploadService
 from app.services.vectorstore import VectorStore
@@ -194,3 +195,14 @@ def get_chunk_repository(session: SessionDep) -> ChunkRepository:
 
 
 ChunkRepositoryDep = Annotated[ChunkRepository, Depends(get_chunk_repository)]
+
+
+def get_retrieval_service(
+    session: SessionDep,
+    embedder: EmbeddingProviderDep,
+    vector_store: VectorStoreDep,
+) -> RetrievalService:
+    return RetrievalService(session=session, embedder=embedder, vector_store=vector_store)
+
+
+RetrievalServiceDep = Annotated[RetrievalService, Depends(get_retrieval_service)]
