@@ -8,7 +8,7 @@ grounded in your own files, with citations back to the exact page.
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
-> **This is a work in progress: 3 of 10 phases are built.** Being upfront so
+> **This is a work in progress: 4 of 10 phases are built.** Being upfront so
 > you know what you are cloning.
 
 ### What works today
@@ -18,12 +18,15 @@ grounded in your own files, with citations back to the exact page.
 - **Uploads** — drag and drop, progress bars, and 60+ file types. Identical
   files are detected by content hash and stored once.
 - **Library** — browse, filter, download and delete your documents.
+- **Text extraction** — PDF, Word, PowerPoint, Excel, EPUB, ODT, RTF, HTML,
+  Markdown, CSV, code and images (OCR). Page numbers, headings and slide
+  numbers are preserved so later phases can cite an exact location.
 
 ### What does not work yet
 
-**Search and chat — the whole point of the project — are not built.** Uploaded
-documents sit at `awaiting parsing`. Nothing extracts their text, embeds them
-or answers questions about them yet. Phases 4 to 7 are where that happens.
+**Search and chat — the whole point of the project — are not built.** Documents
+are parsed into citable blocks, but nothing chunks, embeds or answers questions
+about them yet. Phases 5 to 7 are where that happens.
 
 The retrieval core underneath is real and tested end to end — embedding,
 vector storage, and semantic search all work and have a test proving the
@@ -220,8 +223,8 @@ which keeps them order-independent and parallel-safe.
 | 1 | Architecture, persistence, DI, provider interfaces, app shell | **Done** |
 | 2 | Authentication — argon2, rotating JWT refresh, tenant isolation | **Done** |
 | 3 | File uploads — drag-and-drop, streaming, dedupe, storage abstraction | **Done** |
-| 4 | Parsing — PDF, DOCX, PPTX, XLSX, HTML, code, plus OCR | |
-| 5 | Chunking and embeddings — recursive and semantic strategies, incremental re-index | |
+| 4 | Parsing — PDF, DOCX, PPTX, XLSX, HTML, code, plus OCR | **Done** |
+| 5 | Chunking and embeddings — recursive and semantic strategies, incremental re-index | Next |
 | 6 | Search — semantic, hybrid (BM25 + dense), metadata filters, reranking | |
 | 7 | Chat — streaming RAG with citations, scoped conversations, history | |
 | 8 | Dashboard — storage, vector counts, search analytics | |
