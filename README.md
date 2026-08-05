@@ -4,39 +4,81 @@ A local-first personal search engine. Index everything you own — documents,
 code, notes, images — then ask questions in plain language and get answers
 grounded in your own files, with citations back to the exact page.
 
-> **Status: Phase 3 of 10 complete.** Architecture, persistence, dependency
-> injection, provider interfaces, the application shell, authentication and
-> file uploads are built, tested and running. See the [roadmap](#roadmap).
+[![CI](https://github.com/USERNAME/secondbrain-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/secondbrain-ai/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
+
+> **This is a work in progress: 3 of 10 phases are built.** Being upfront so
+> you know what you are cloning.
+
+### What works today
+
+- **Accounts** — register and sign in. Documents are private per user, and
+  that boundary is enforced server-side and tested.
+- **Uploads** — drag and drop, progress bars, and 60+ file types. Identical
+  files are detected by content hash and stored once.
+- **Library** — browse, filter, download and delete your documents.
+
+### What does not work yet
+
+**Search and chat — the whole point of the project — are not built.** Uploaded
+documents sit at `awaiting parsing`. Nothing extracts their text, embeds them
+or answers questions about them yet. Phases 4 to 7 are where that happens.
+
+The retrieval core underneath is real and tested end to end — embedding,
+vector storage, and semantic search all work and have a test proving the
+example queries return the right documents. It is simply not yet connected to
+uploaded files.
 
 ---
 
 ## Quick start
 
-No Docker, PostgreSQL or Qdrant installation required. The stack runs on
-SQLite plus an embedded Qdrant out of the box.
+No Docker, PostgreSQL or Qdrant installation needed. It runs on SQLite plus an
+embedded Qdrant, so setup is two commands and everything stays on your machine.
 
-**Requirements:** Python 3.11 or 3.12, Node.js 20.9+.
+**Requirements:** Python 3.11–3.14 and Node.js 20.9+.
+
+```bash
+git clone https://github.com/USERNAME/secondbrain-ai.git && cd secondbrain-ai
+```
 
 ```bash
 cp .env.example .env
 ```
 
 ```bash
-./scripts/tasks.ps1 setup
+make setup
 ```
 
-On macOS or Linux use `make setup` instead. Then in two terminals:
+On Windows without `make`, use `./scripts/tasks.ps1 setup` — every task has the
+same name in both. Setup creates a virtualenv, installs both stacks and applies
+migrations. Expect it to take a few minutes.
+
+Then in two terminals:
 
 ```bash
-./scripts/tasks.ps1 dev-backend
+make dev-backend
 ```
 
 ```bash
-./scripts/tasks.ps1 dev-frontend
+make dev-frontend
 ```
 
-The API is at http://localhost:8000 (interactive docs at `/docs`) and the app
-at http://localhost:3000.
+Open http://localhost:3000 and create an account. The API is at
+http://localhost:8000 with interactive docs at `/docs`.
+
+> On first upload the app downloads the embedding model (~130 MB) once. That
+> is the only network call it makes, and it is cached afterwards — everything
+> else runs offline.
+
+### Something not working?
+
+| Symptom | Cause |
+| --- | --- |
+| `requires a different Python` | Your default `python` is outside 3.11–3.14. Create the venv with a supported one: `python3.12 -m venv backend/.venv`. |
+| Port 3000 already in use | Next.js picks the next free port and prints it. Set `NEXT_PUBLIC_API_URL` if you also move the backend. |
+| Login succeeds then immediately logs out | The refresh cookie was rejected. Check `SECONDBRAIN_ENVIRONMENT=development` in `.env`, since secure cookies are dropped over plain HTTP. |
 
 ---
 
@@ -102,15 +144,20 @@ boundary, so several repositories can participate in one atomic unit of work.
 
 | Task | Command |
 | --- | --- |
-| Run tests | `./scripts/tasks.ps1 test` |
-| Lint | `./scripts/tasks.ps1 lint` |
-| Format | `./scripts/tasks.ps1 fmt` |
-| Type-check | `./scripts/tasks.ps1 typecheck` |
-| Everything CI runs | `./scripts/tasks.ps1 check` |
-| New migration | `./scripts/tasks.ps1 migration -Message "add chat tables"` |
-| Apply migrations | `./scripts/tasks.ps1 migrate` |
+| Run tests | `make test` |
+| Lint | `make lint` |
+| Format | `make fmt` |
+| Type-check | `make typecheck` |
+| Everything CI runs | `make check` |
+| New migration | `make migration m="add chat tables"` |
+| Apply migrations | `make migrate` |
 
-Every task has a `make` equivalent with the same name.
+On Windows without `make`, every task has the same name under
+`./scripts/tasks.ps1` — for example `./scripts/tasks.ps1 check`, or
+`./scripts/tasks.ps1 migration -Message "add chat tables"`.
+
+Tests that load a real embedding model are marked `slow` and skipped by
+default. Run them with `pytest -m slow` from `backend/`.
 
 ### Configuration
 
@@ -208,3 +255,16 @@ secondbrain-ai/
 ├── docker/                 Compose stack and Dockerfiles
 └── scripts/                Task runner
 ```
+
+---
+
+## Contributing
+
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the setup
+steps and the conventions the codebase follows.
+
+Run `make check` before opening a PR — it runs exactly what CI runs.
+
+## Licence
+
+[MIT](LICENSE). Use it, fork it, build on it.
