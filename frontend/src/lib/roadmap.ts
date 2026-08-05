@@ -7,7 +7,7 @@
  * booleans does.
  */
 
-export const COMPLETED_THROUGH_PHASE = 5;
+export const COMPLETED_THROUGH_PHASE = 6;
 
 export interface RoadmapPhase {
   phase: number;

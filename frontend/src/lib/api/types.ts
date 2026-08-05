@@ -140,3 +140,37 @@ export interface StorageUsage {
   total_bytes: number;
   max_upload_bytes: number;
 }
+
+// ─── Search ─────────────────────────────────────────────────────────────────
+
+export type SearchMode = "hybrid" | "semantic" | "keyword";
+
+export interface SearchHit {
+  chunk_id: string;
+  document_id: string;
+  document_title: string;
+  filename: string;
+  extension: string;
+  text: string;
+  snippet: string;
+  score: number;
+  page_number: number | null;
+  section_title: string | null;
+  /** Which retrievers matched — "why did this rank here?" */
+  matched_by: string[];
+}
+
+export interface SearchResponse {
+  query: string;
+  hits: SearchHit[];
+  total: number;
+  took_ms: number;
+}
+
+export interface SearchRequest {
+  query: string;
+  limit?: number;
+  document_ids?: string[];
+  extensions?: string[];
+  mode?: SearchMode;
+}
