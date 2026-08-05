@@ -34,11 +34,21 @@ Remaining: the analytics dashboard (8), GitHub repository import (9), and
 production deployment (10). The core product — index your documents, search
 them, ask questions and get cited answers — is complete.
 
-**Chat needs a language model.** Ollama is the default and runs locally: install
-it, run , and chat works offline with nothing leaving
-your machine. Alternatively set  to ,
- or  with the matching API key. Everything else — upload,
-parsing, search — works without any of this.
+**Chat needs a language model.** Ollama is the default and runs locally, so
+chat works offline with nothing leaving your machine:
+
+```bash
+ollama pull phi3:mini
+```
+
+Then set `SECONDBRAIN_LLM_MODEL=phi3:mini` in `.env`. Any Ollama model works;
+larger ones answer better and slower.
+
+To use a hosted model instead, set `SECONDBRAIN_LLM_PROVIDER` to `openai`,
+`anthropic` or `gemini` along with the matching API key.
+
+Everything else — upload, parsing, search — works with no model configured
+at all.
 
 ---
 
