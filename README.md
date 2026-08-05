@@ -8,7 +8,7 @@ grounded in your own files, with citations back to the exact page.
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
-> **This is a work in progress: 6 of 10 phases are built.** Being upfront so
+> **This is a work in progress: 7 of 10 phases are built.** Being upfront so
 > you know what you are cloning.
 
 ### What works today
@@ -24,11 +24,21 @@ grounded in your own files, with citations back to the exact page.
 - **Search** — ask in plain language. Hybrid retrieval fuses semantic meaning
   with exact term matching, so both "where is my offer letter" and a literal
   identifier work in the same box.
+- **Chat** — grounded answers streamed token by token, every claim carrying a
+  citation back to the document, page and section it came from. Works with
+  Ollama locally, or OpenAI, Anthropic and Gemini.
 
 ### What does not work yet
 
-**Chat is not built.** Search returns the right passages, but nothing yet
-composes them into a written answer with citations. That is Phase 7.
+Remaining: the analytics dashboard (8), GitHub repository import (9), and
+production deployment (10). The core product — index your documents, search
+them, ask questions and get cited answers — is complete.
+
+**Chat needs a language model.** Ollama is the default and runs locally: install
+it, run , and chat works offline with nothing leaving
+your machine. Alternatively set  to ,
+ or  with the matching API key. Everything else — upload,
+parsing, search — works without any of this.
 
 ---
 
@@ -223,8 +233,8 @@ which keeps them order-independent and parallel-safe.
 | 4 | Parsing — PDF, DOCX, PPTX, XLSX, HTML, code, plus OCR | **Done** |
 | 5 | Chunking and embeddings — recursive chunking, batched embedding, incremental re-index | **Done** |
 | 6 | Search — hybrid dense + keyword with reciprocal rank fusion, filters | **Done** |
-| 7 | Chat — streaming RAG with citations, scoped conversations, history | Next |
-| 8 | Dashboard — storage, vector counts, search analytics | |
+| 7 | Chat — streaming RAG with citations, scoped conversations, history | **Done** |
+| 8 | Dashboard — storage, vector counts, search analytics | Next |
 | 9 | GitHub — clone, structure-aware code indexing, symbol search | |
 | 10 | Production — containers, migrations, observability, deployment | |
 

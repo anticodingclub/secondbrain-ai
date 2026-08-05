@@ -174,3 +174,39 @@ export interface SearchRequest {
   extensions?: string[];
   mode?: SearchMode;
 }
+
+// ─── Chat ───────────────────────────────────────────────────────────────────
+
+export interface ChatCitation {
+  number: number;
+  chunk_id: string;
+  document_id: string;
+  document_title: string;
+  filename: string;
+  snippet: string;
+  page_number: number | null;
+  section_title: string | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  ordinal: number;
+  role: "user" | "assistant";
+  content: string;
+  citations: ChatCitation[];
+  model: string | null;
+  latency_ms: number | null;
+  created_at: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationDetail extends ConversationSummary {
+  messages: ChatMessage[];
+}
