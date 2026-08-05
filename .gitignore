@@ -23,8 +23,15 @@ out/
 .env.*.local
 
 # Application data (uploads, sqlite db, embedded qdrant, model cache)
-data/
-storage/
+#
+# These patterns are anchored with a leading slash on purpose. A bare `data/`
+# or `storage/` matches a directory of that name at *any* depth, which
+# silently excluded `backend/app/services/storage/` — real source code — from
+# the repository. A fresh clone then failed on import while the original
+# working copy kept running, which is close to undiagnosable.
+/data/
+/backend/data/
+/frontend/data/
 *.db
 *.sqlite3
 .models/

@@ -2,7 +2,7 @@
 name = "secondbrain-backend"
 version = "0.1.0"
 description = "SecondBrain AI - local-first personal search engine backend"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",

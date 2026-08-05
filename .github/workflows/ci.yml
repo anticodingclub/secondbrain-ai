@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # Both supported versions, because a 3.12-only syntax slip is easy to
+      # make and impossible to notice on one machine.
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install
+        run: pip install -e "backend[dev,embeddings-fast]"
+
+      - name: Lint
+        run: ruff check backend/app backend/tests backend/scripts
+
+      - name: Format
+        run: ruff format --check backend/app backend/tests backend/scripts
+
+      - name: Type-check
+        working-directory: backend
+        run: mypy app
+
+      # Excludes `slow`, which downloads ~130 MB of model weights. Covered by
+      # the separate job below so a routine PR is not held up by a download.
+      - name: Test
+        working-directory: backend
+        run: pytest -m "not slow" -q
+
+      - name: Check for un-generated migrations
+        working-directory: backend
+        run: |
+          alembic upgrade head
+          alembic check
+
+  retrieval:
+    name: Retrieval core (real embedding model)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      # Model weights are large and immutable; re-downloading them on every
+      # run wastes several minutes and Hugging Face's bandwidth.
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-bge-small-en-v1.5
+
+      - name: Install
+        run: pip install -e "backend[dev,embeddings-fast]"
+
+      - name: Test retrieval end to end
+        working-directory: backend
+        run: pytest -m slow -q
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Regenerates the typed-route definitions. Without this, tsc validates
+      # against whatever was committed, so a route added without its types
+      # would pass CI and fail locally.
+      - name: Generate route types
+        run: npx next typegen
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint src
+
+      - name: Build
+        run: npm run build
