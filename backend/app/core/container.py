@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from app.core.config import Settings
 from app.core.logging import get_logger
 from app.db.session import create_engine, create_session_factory
+from app.services.chunking import ChunkingStrategy, build_chunker
 from app.services.embeddings import EmbeddingProvider, build_embedding_provider
 from app.services.parsing import ParserRegistry, build_parser_registry
 from app.services.storage import ObjectStorage, build_object_storage
@@ -33,6 +34,7 @@ class Container:
     embedding_provider: EmbeddingProvider
     object_storage: ObjectStorage
     parser_registry: ParserRegistry
+    chunker: ChunkingStrategy
 
     @classmethod
     def build(cls, settings: Settings) -> Container:
@@ -45,6 +47,7 @@ class Container:
             embedding_provider=build_embedding_provider(settings),
             object_storage=build_object_storage(settings),
             parser_registry=build_parser_registry(),
+            chunker=build_chunker(settings),
         )
 
     async def startup(self) -> None:

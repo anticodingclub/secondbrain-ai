@@ -18,11 +18,13 @@ from app.core.container import Container
 from app.core.exceptions import AuthenticationError
 from app.core.logging import user_id_var
 from app.models.user import User
+from app.repositories.chunk import ChunkRepository
 from app.repositories.document import DocumentRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
 from app.services.embeddings import EmbeddingProvider
+from app.services.indexing import IndexingService
 from app.services.parsing.pipeline import ParsingService
 from app.services.storage import ObjectStorage
 from app.services.uploads import UploadService
@@ -171,3 +173,24 @@ def get_parsing_service(container: ContainerDep) -> ParsingService:
 
 
 ParsingServiceDep = Annotated[ParsingService, Depends(get_parsing_service)]
+
+
+def get_indexing_service(container: ContainerDep) -> IndexingService:
+    return IndexingService(
+        session_factory=container.session_factory,
+        parsing=get_parsing_service(container),
+        chunker=container.chunker,
+        embedder=container.embedding_provider,
+        vector_store=container.vector_store,
+        settings=container.settings,
+    )
+
+
+IndexingServiceDep = Annotated[IndexingService, Depends(get_indexing_service)]
+
+
+def get_chunk_repository(session: SessionDep) -> ChunkRepository:
+    return ChunkRepository(session)
+
+
+ChunkRepositoryDep = Annotated[ChunkRepository, Depends(get_chunk_repository)]

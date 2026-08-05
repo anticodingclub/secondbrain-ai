@@ -8,7 +8,7 @@ grounded in your own files, with citations back to the exact page.
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
-> **This is a work in progress: 4 of 10 phases are built.** Being upfront so
+> **This is a work in progress: 5 of 10 phases are built.** Being upfront so
 > you know what you are cloning.
 
 ### What works today
@@ -224,8 +224,8 @@ which keeps them order-independent and parallel-safe.
 | 2 | Authentication — argon2, rotating JWT refresh, tenant isolation | **Done** |
 | 3 | File uploads — drag-and-drop, streaming, dedupe, storage abstraction | **Done** |
 | 4 | Parsing — PDF, DOCX, PPTX, XLSX, HTML, code, plus OCR | **Done** |
-| 5 | Chunking and embeddings — recursive and semantic strategies, incremental re-index | Next |
-| 6 | Search — semantic, hybrid (BM25 + dense), metadata filters, reranking | |
+| 5 | Chunking and embeddings — recursive chunking, batched embedding, incremental re-index | **Done** |
+| 6 | Search — semantic, hybrid (BM25 + dense), metadata filters, reranking | Next |
 | 7 | Chat — streaming RAG with citations, scoped conversations, history | |
 | 8 | Dashboard — storage, vector counts, search analytics | |
 | 9 | GitHub — clone, structure-aware code indexing, symbol search | |

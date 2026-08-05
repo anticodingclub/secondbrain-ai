@@ -22,6 +22,7 @@ from fastapi.responses import StreamingResponse
 from app.api.dependencies import (
     CurrentUser,
     DocumentRepositoryDep,
+    IndexingServiceDep,
     ParsingServiceDep,
     SessionDep,
     SettingsDep,
@@ -38,11 +39,32 @@ from app.schemas.document import (
     TextBlockResponse,
     UploadResponse,
 )
+from app.services.indexing import IndexingService
+from app.services.parsing.pipeline import ParsingService
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 #: Matches the storage layer's read size; keeps one buffer size in play.
 STREAM_CHUNK_SIZE = 1024 * 1024
+
+
+async def _parse_then_index(
+    parsing: ParsingService,
+    indexing: IndexingService,
+    document_id: uuid.UUID,
+    owner_id: uuid.UUID,
+) -> None:
+    """Run extraction and indexing as one background job.
+
+    Chained rather than scheduled separately because indexing reads what
+    parsing wrote — two independent tasks would race, and the loser would find
+    no extracted text and mark a perfectly good document unsearchable.
+
+    Neither step raises: both record their outcome on the document, which is
+    the only way a background failure becomes visible to the user.
+    """
+    await parsing.parse_document(document_id, owner_id=owner_id)
+    await indexing.index_document(document_id, owner_id=owner_id)
 
 
 async def _stream_upload(upload: UploadFile) -> AsyncIterator[bytes]:
@@ -66,6 +88,7 @@ async def upload_document(
     session: SessionDep,
     upload_service: UploadServiceDep,
     parsing_service: ParsingServiceDep,
+    indexing_service: IndexingServiceDep,
     background: BackgroundTasks,
     file: Annotated[UploadFile, File(description="The file to index.")],
     collection_id: Annotated[uuid.UUID | None, Form()] = None,
@@ -94,7 +117,11 @@ async def upload_document(
         # forever while the log filled with `parse_target_missing`.
         await session.commit()
         background.add_task(
-            parsing_service.parse_document, result.document.id, owner_id=current_user.id
+            _parse_then_index,
+            parsing_service,
+            indexing_service,
+            result.document.id,
+            current_user.id,
         )
 
     return response
@@ -230,9 +257,10 @@ async def reparse_document(
     current_user: CurrentUser,
     session: SessionDep,
     parsing_service: ParsingServiceDep,
+    indexing_service: IndexingServiceDep,
     background: BackgroundTasks,
 ) -> DocumentResponse:
-    """Re-run extraction.
+    """Re-run extraction and indexing.
 
     Worth having for the failure cases that are fixable without re-uploading:
     a scanned PDF after Tesseract is installed, or anything that failed on a
@@ -241,7 +269,13 @@ async def reparse_document(
     response = DocumentResponse.model_validate(document)
     # Same ordering hazard as upload — see the comment there.
     await session.commit()
-    background.add_task(parsing_service.parse_document, document.id, owner_id=current_user.id)
+    background.add_task(
+        _parse_then_index,
+        parsing_service,
+        indexing_service,
+        document.id,
+        current_user.id,
+    )
     return response
 
 
@@ -249,6 +283,13 @@ async def reparse_document(
     "/{document_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a document"
 )
 async def delete_document(
-    document_id: uuid.UUID, current_user: CurrentUser, upload_service: UploadServiceDep
+    document_id: uuid.UUID,
+    current_user: CurrentUser,
+    upload_service: UploadServiceDep,
+    indexing_service: IndexingServiceDep,
 ) -> None:
+    # Vectors first: they live in a separate store with no foreign key, so
+    # nothing else would ever clean them up. Chunk rows cascade from the
+    # document.
+    await indexing_service.remove_document(document_id, owner_id=current_user.id)
     await upload_service.delete(document_id, owner_id=current_user.id)

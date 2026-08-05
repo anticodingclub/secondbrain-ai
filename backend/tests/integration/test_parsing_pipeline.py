@@ -56,7 +56,7 @@ async def test_uploaded_document_is_parsed(client: AsyncClient) -> None:
 
     document = (await client.get(f"{PREFIX}/documents/{document_id}", headers=bearer(token))).json()
 
-    assert document["status"] == "parsed"
+    assert document["status"] == "indexed"
     assert document["word_count"] > 0
     assert document["error_message"] is None
 
@@ -173,8 +173,8 @@ async def test_duplicate_upload_does_not_reparse(client: AsyncClient) -> None:
 
     assert second["was_duplicate"] is True
     assert second["document"]["id"] == first["document"]["id"]
-    # Still parsed from the first upload, not reset to pending by the second.
-    assert second["document"]["status"] == "parsed"
+    # Still indexed from the first upload, not reset to pending by the second.
+    assert second["document"]["status"] == "indexed"
 
 
 async def test_text_endpoint_is_owner_scoped(client: AsyncClient) -> None:
@@ -195,7 +195,28 @@ async def test_reparse_reruns_extraction(client: AsyncClient) -> None:
     assert response.status_code == 200
 
     document = (await client.get(f"{PREFIX}/documents/{document_id}", headers=bearer(token))).json()
-    assert document["status"] == "parsed"
+    # Terminal state is `indexed` since Phase 5 chained indexing after parsing.
+    assert document["status"] == "indexed"
+
+
+async def test_a_parse_failure_is_not_erased_by_indexing(client: AsyncClient) -> None:
+    """Indexing runs straight after parsing. A document that failed to parse
+    has no text, and the "nothing to index" path would happily mark it
+    indexed — leaving the user with a document that claims to be searchable,
+    returns nothing, and no longer says why."""
+    token = await sign_up(client)
+    document_id = (
+        await client.post(
+            f"{PREFIX}/documents/upload",
+            headers=bearer(token),
+            files={"file": ("broken.pdf", b"%PDF-1.7\nnot a real pdf", "application/pdf")},
+        )
+    ).json()["document"]["id"]
+
+    document = (await client.get(f"{PREFIX}/documents/{document_id}", headers=bearer(token))).json()
+
+    assert document["status"] == "failed"
+    assert document["error_message"]
 
 
 async def test_deleting_a_document_removes_its_extracted_text(

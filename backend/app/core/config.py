@@ -79,6 +79,20 @@ class Settings(BaseSettings):
     qdrant_path: Path = Path("./data/qdrant")
     qdrant_collection: str = "secondbrain_chunks"
 
+    # ── Chunking ─────────────────────────────────────────────────────────
+    #: Target chunk size in characters. bge-small truncates at 512 tokens and
+    #: English averages ~4 characters per token, so 1600 leaves headroom for
+    #: the heading prefix without silently losing the tail of a chunk.
+    chunk_size_chars: int = Field(default=1600, ge=200, le=8000)
+    #: Overlap carried between adjacent chunks, so a sentence spanning a
+    #: boundary is still retrievable from at least one side.
+    chunk_overlap_chars: int = Field(default=200, ge=0, le=2000)
+    #: Below this a chunk is noise — a stray heading or page number that
+    #: matches everything weakly and nothing well.
+    chunk_min_chars: int = Field(default=60, ge=0)
+    #: Vectors sent to Qdrant per upsert.
+    index_batch_size: int = Field(default=64, ge=1, le=512)
+
     # ── Embeddings ───────────────────────────────────────────────────────
     embedding_provider: EmbeddingProviderName = EmbeddingProviderName.FASTEMBED
     embedding_model: str = "BAAI/bge-small-en-v1.5"
