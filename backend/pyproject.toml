@@ -22,11 +22,22 @@ dependencies = [
     "pyjwt>=2.10.0",
     "email-validator>=2.2.0",
     "aiofiles>=24.1.0",
+    # Parsing. Each is the lightest library that reads its format without a
+    # native dependency, which is what keeps setup to two commands.
+    "pypdf>=5.1.0",
+    "python-docx>=1.1.2",
+    "python-pptx>=1.0.2",
+    "openpyxl>=3.1.5",
+    "selectolax>=0.3.27",
+    "charset-normalizer>=3.4.0",
 ]
 
 [project.optional-dependencies]
 embeddings-fast = ["fastembed>=0.4.0"]
 embeddings-torch = ["sentence-transformers>=3.3.0"]
+# OCR needs the Tesseract binary installed separately, so it stays optional.
+# Without it, images are stored and flagged rather than failing the upload.
+ocr = ["pytesseract>=0.3.13", "pillow>=11.0.0"]
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",

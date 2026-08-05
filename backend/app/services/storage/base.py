@@ -48,8 +48,25 @@ class ObjectStorage(ABC):
         """
 
     @abstractmethod
+    async def put_derived(self, *, source_key: str, suffix: str, data: bytes) -> str:
+        """Store something computed from an existing object, and return its key.
+
+        Extracted text belongs next to the file it came from: it is worthless
+        without the original, must disappear with it, and is regenerable at
+        any time. Deriving the key from the source means deletion and any
+        future orphan sweep only have to reason about one prefix.
+
+        Bytes rather than a stream because derived artifacts are text-sized,
+        not upload-sized.
+        """
+
+    @abstractmethod
     async def delete(self, key: str) -> bool:
         """Remove an object. Returns False if it was already gone."""
+
+    @abstractmethod
+    async def delete_prefix(self, prefix: str) -> int:
+        """Remove an object and everything derived from it. Returns the count."""
 
     @abstractmethod
     async def exists(self, key: str) -> bool: ...

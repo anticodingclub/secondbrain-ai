@@ -58,6 +58,19 @@ class AuthenticationError(SecondBrainError):
     default_message = "Authentication is required."
 
 
+class DocumentParseError(SecondBrainError):
+    """A document could not be read.
+
+    422 rather than 500: a corrupt or password-protected file is a fact about
+    the input, not a failure of the server, and the user is the only one who
+    can do anything about it.
+    """
+
+    status_code = 422
+    error_code = "parse_failed"
+    default_message = "The document could not be read."
+
+
 class ObjectNotFoundError(SecondBrainError):
     """A storage key points at bytes that are not there.
 

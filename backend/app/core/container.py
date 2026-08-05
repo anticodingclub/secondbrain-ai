@@ -17,6 +17,7 @@ from app.core.config import Settings
 from app.core.logging import get_logger
 from app.db.session import create_engine, create_session_factory
 from app.services.embeddings import EmbeddingProvider, build_embedding_provider
+from app.services.parsing import ParserRegistry, build_parser_registry
 from app.services.storage import ObjectStorage, build_object_storage
 from app.services.vectorstore import VectorStore, build_vector_store
 
@@ -31,6 +32,7 @@ class Container:
     vector_store: VectorStore
     embedding_provider: EmbeddingProvider
     object_storage: ObjectStorage
+    parser_registry: ParserRegistry
 
     @classmethod
     def build(cls, settings: Settings) -> Container:
@@ -42,6 +44,7 @@ class Container:
             vector_store=build_vector_store(settings),
             embedding_provider=build_embedding_provider(settings),
             object_storage=build_object_storage(settings),
+            parser_registry=build_parser_registry(),
         )
 
     async def startup(self) -> None:

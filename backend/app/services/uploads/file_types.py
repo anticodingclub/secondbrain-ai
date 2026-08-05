@@ -53,7 +53,6 @@ _TYPES: tuple[FileType, ...] = (
         FileCategory.DOCUMENT,
         _ZIP,
     ),
-    FileType(".doc", "application/msword", FileCategory.DOCUMENT, (b"\xd0\xcf\x11\xe0",)),
     FileType(".odt", "application/vnd.oasis.opendocument.text", FileCategory.DOCUMENT, _ZIP),
     FileType(".rtf", "application/rtf", FileCategory.DOCUMENT, (b"{\\rtf",)),
     FileType(".epub", "application/epub+zip", FileCategory.DOCUMENT, _ZIP),
@@ -64,7 +63,6 @@ _TYPES: tuple[FileType, ...] = (
         FileCategory.SPREADSHEET,
         _ZIP,
     ),
-    FileType(".xls", "application/vnd.ms-excel", FileCategory.SPREADSHEET, (b"\xd0\xcf\x11\xe0",)),
     FileType(".csv", "text/csv", FileCategory.SPREADSHEET),
     FileType(".tsv", "text/tab-separated-values", FileCategory.SPREADSHEET),
     # Presentations
@@ -73,9 +71,6 @@ _TYPES: tuple[FileType, ...] = (
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         FileCategory.PRESENTATION,
         _ZIP,
-    ),
-    FileType(
-        ".ppt", "application/vnd.ms-powerpoint", FileCategory.PRESENTATION, (b"\xd0\xcf\x11\xe0",)
     ),
     # Images (OCR in Phase 4)
     FileType(".png", "image/png", FileCategory.IMAGE, (b"\x89PNG\r\n\x1a\n",)),
@@ -164,6 +159,20 @@ _TYPES: tuple[FileType, ...] = (
     FileType(".flac", "audio/flac", FileCategory.AUDIO, (b"fLaC",)),
     FileType(".ogg", "audio/ogg", FileCategory.AUDIO, (b"OggS",)),
 )
+
+#: Formats deliberately refused, with what to do instead. The legacy binary
+#: Office formats need native tooling (antiword, LibreOffice) that would break
+#: the two-command setup. Accepting a file nothing can read is worse than
+#: refusing it: it uploads happily and then never becomes searchable, and the
+#: user has no way to find out why.
+UNSUPPORTED_HINTS: dict[str, str] = {
+    ".doc": "Legacy .doc is not supported. Save it as .docx and upload again.",
+    ".xls": "Legacy .xls is not supported. Save it as .xlsx and upload again.",
+    ".ppt": "Legacy .ppt is not supported. Save it as .pptx and upload again.",
+    ".pages": "Apple Pages is not supported. Export it as .docx or PDF.",
+    ".numbers": "Apple Numbers is not supported. Export it as .xlsx or CSV.",
+    ".key": "Apple Keynote is not supported. Export it as .pptx or PDF.",
+}
 
 BY_EXTENSION: dict[str, FileType] = {file_type.extension: file_type for file_type in _TYPES}
 

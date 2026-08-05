@@ -7,22 +7,35 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import (
     CurrentUser,
     DocumentRepositoryDep,
+    ParsingServiceDep,
+    SessionDep,
     SettingsDep,
     UploadServiceDep,
 )
 from app.core.exceptions import NotFoundError
-from app.models.document import Document
+from app.models.document import Document, DocumentStatus
 from app.schemas.document import (
     DocumentFilters,
     DocumentResponse,
+    ExtractedTextResponse,
     Page,
     StorageUsageResponse,
+    TextBlockResponse,
     UploadResponse,
 )
 
@@ -50,7 +63,10 @@ async def _stream_upload(upload: UploadFile) -> AsyncIterator[bytes]:
 )
 async def upload_document(
     current_user: CurrentUser,
+    session: SessionDep,
     upload_service: UploadServiceDep,
+    parsing_service: ParsingServiceDep,
+    background: BackgroundTasks,
     file: Annotated[UploadFile, File(description="The file to index.")],
     collection_id: Annotated[uuid.UUID | None, Form()] = None,
 ) -> UploadResponse:
@@ -61,10 +77,27 @@ async def upload_document(
         declared_content_type=file.content_type,
         collection_id=collection_id,
     )
-    return UploadResponse(
+    response = UploadResponse(
         document=DocumentResponse.model_validate(result.document),
         was_duplicate=result.was_duplicate,
     )
+
+    # Parsing runs after the response so the client is not left waiting on a
+    # 200-page PDF. A duplicate is already parsed; re-running would repeat the
+    # work for no change.
+    if not result.was_duplicate:
+        # This commit is load-bearing, and one of the few places a handler
+        # commits deliberately. FastAPI runs background tasks *before* it tears
+        # down `yield` dependencies, so `get_session` has not committed yet at
+        # this point. Without committing here, the parser opens its own session
+        # and finds no such document — every upload would sit at `pending`
+        # forever while the log filled with `parse_target_missing`.
+        await session.commit()
+        background.add_task(
+            parsing_service.parse_document, result.document.id, owner_id=current_user.id
+        )
+
+    return response
 
 
 @router.get("", response_model=Page[DocumentResponse], summary="List documents")
@@ -151,6 +184,65 @@ async def download_document(
             "Content-Length": str(document.size_bytes),
         },
     )
+
+
+@router.get(
+    "/{document_id}/text",
+    response_model=ExtractedTextResponse,
+    summary="The extracted text and its citation anchors",
+)
+async def get_extracted_text(
+    document: OwnedDocument, parsing_service: ParsingServiceDep
+) -> ExtractedTextResponse:
+    parsed = await parsing_service.load_blocks(document)
+    if parsed is None:
+        raise NotFoundError(
+            "This document has not been parsed yet."
+            if document.status in {DocumentStatus.PENDING, DocumentStatus.PARSING}
+            else "No extracted text is available for this document."
+        )
+
+    return ExtractedTextResponse(
+        document_id=document.id,
+        page_count=document.page_count,
+        word_count=document.word_count or 0,
+        warnings=list(parsed.warnings),
+        blocks=[
+            TextBlockResponse(
+                text=block.text,
+                page_number=block.page_number,
+                section_title=block.section_title,
+                heading_level=block.heading_level,
+                metadata=block.metadata,
+            )
+            for block in parsed.blocks
+        ],
+    )
+
+
+@router.post(
+    "/{document_id}/reparse",
+    response_model=DocumentResponse,
+    summary="Extract the text again",
+)
+async def reparse_document(
+    document: OwnedDocument,
+    current_user: CurrentUser,
+    session: SessionDep,
+    parsing_service: ParsingServiceDep,
+    background: BackgroundTasks,
+) -> DocumentResponse:
+    """Re-run extraction.
+
+    Worth having for the failure cases that are fixable without re-uploading:
+    a scanned PDF after Tesseract is installed, or anything that failed on a
+    parser bug since fixed.
+    """
+    response = DocumentResponse.model_validate(document)
+    # Same ordering hazard as upload — see the comment there.
+    await session.commit()
+    background.add_task(parsing_service.parse_document, document.id, owner_id=current_user.id)
+    return response
 
 
 @router.delete(

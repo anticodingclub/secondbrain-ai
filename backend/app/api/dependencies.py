@@ -23,6 +23,7 @@ from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
 from app.services.embeddings import EmbeddingProvider
+from app.services.parsing.pipeline import ParsingService
 from app.services.storage import ObjectStorage
 from app.services.uploads import UploadService
 from app.services.vectorstore import VectorStore
@@ -154,3 +155,19 @@ def get_upload_service(
 
 
 UploadServiceDep = Annotated[UploadService, Depends(get_upload_service)]
+
+
+def get_parsing_service(container: ContainerDep) -> ParsingService:
+    """Built from the container's session *factory*, not the request session.
+
+    Parsing runs after the response is sent, by which point the request's
+    transaction is closed. It must open its own.
+    """
+    return ParsingService(
+        session_factory=container.session_factory,
+        storage=container.object_storage,
+        registry=container.parser_registry,
+    )
+
+
+ParsingServiceDep = Annotated[ParsingService, Depends(get_parsing_service)]

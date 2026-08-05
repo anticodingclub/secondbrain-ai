@@ -26,6 +26,7 @@ from app.repositories.document import DocumentRepository
 from app.services.storage.base import ObjectStorage
 from app.services.uploads.file_types import (
     SIGNATURE_PROBE_BYTES,
+    UNSUPPORTED_HINTS,
     FileType,
     detect,
     signature_matches,
@@ -67,8 +68,11 @@ class UploadService:
     ) -> UploadResult:
         file_type = detect(filename)
         if file_type is None:
+            suffix = Path(filename).suffix.lower()
             raise UnsupportedMediaTypeError(
-                f"{filename!r} is not a file type SecondBrain can index."
+                UNSUPPORTED_HINTS.get(
+                    suffix, f"{filename!r} is not a file type SecondBrain can index."
+                )
             )
 
         # The browser's Content-Type is a hint, not evidence — the extension
@@ -147,7 +151,9 @@ class UploadService:
         await self._documents.delete(document.id)
         await self._session.flush()
 
-        if not await self._storage.delete(storage_key):
+        # delete_prefix, not delete: extracted text is stored alongside the
+        # original and must not outlive it.
+        if not await self._storage.delete_prefix(storage_key):
             logger.warning("storage_object_orphaned", document_id=str(document_id), key=storage_key)
 
     async def open_content(self, document: Document) -> AsyncIterator[bytes]:

@@ -28,6 +28,10 @@ if TYPE_CHECKING:
 class DocumentStatus(StrEnum):
     PENDING = "pending"
     PARSING = "parsing"
+    #: Text extracted and its blocks persisted, but not yet chunked or
+    #: embedded. A terminal state until Phase 5 picks it up — a document can
+    #: sit here indefinitely and still be readable, just not searchable.
+    PARSED = "parsed"
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     INDEXED = "indexed"

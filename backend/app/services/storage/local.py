@@ -77,8 +77,43 @@ class LocalObjectStorage(ObjectStorage):
 
         return iterator()
 
+    async def put_derived(self, *, source_key: str, suffix: str, data: bytes) -> str:
+        key = f"{source_key}{suffix}"
+        path = self._path_for(key)
+        await aiofiles.os.makedirs(path.parent, exist_ok=True)
+
+        try:
+            async with aiofiles.open(path, "wb") as handle:
+                await handle.write(data)
+        except BaseException:
+            await self._unlink_quietly(path)
+            raise
+
+        logger.debug("derived_object_stored", key=key, size_bytes=len(data))
+        return key
+
     async def delete(self, key: str) -> bool:
         return await self._unlink_quietly(self._path_for(key))
+
+    async def delete_prefix(self, prefix: str) -> int:
+        """Delete the object and its siblings sharing the same key prefix.
+
+        Derived artifacts are stored as `<key><suffix>` in the same directory,
+        so a prefix match over that one directory finds them all without
+        walking the tree.
+        """
+        base = self._path_for(prefix)
+        removed = 0
+
+        try:
+            entries = await aiofiles.os.listdir(base.parent)
+        except (FileNotFoundError, NotADirectoryError):
+            return 0
+
+        for entry in entries:
+            if entry.startswith(base.name) and await self._unlink_quietly(base.parent / entry):
+                removed += 1
+        return removed
 
     async def exists(self, key: str) -> bool:
         return bool(await aiofiles.os.path.exists(self._path_for(key)))

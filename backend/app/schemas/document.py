@@ -74,6 +74,26 @@ class DocumentFilters(BaseModel):
     offset: Annotated[int, Field(ge=0)] = 0
 
 
+class TextBlockResponse(BaseModel):
+    """One extracted passage and where it came from."""
+
+    text: str
+    page_number: int | None
+    section_title: str | None
+    heading_level: int | None
+    metadata: dict[str, Any]
+
+
+class ExtractedTextResponse(BaseModel):
+    document_id: uuid.UUID
+    page_count: int | None
+    word_count: int
+    #: Non-fatal problems worth showing: a scanned PDF, a truncated sheet, an
+    #: image OCR could not read.
+    warnings: list[str]
+    blocks: list[TextBlockResponse]
+
+
 class StorageUsageResponse(BaseModel):
     document_count: int
     total_bytes: int
