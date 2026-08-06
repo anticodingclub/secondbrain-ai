@@ -36,6 +36,9 @@ out/
 *.sqlite3
 .models/
 
+# Local agent/editor workspace config (machine-specific, not project config)
+.claude/
+
 # Editors / OS
 .DS_Store
 Thumbs.db
