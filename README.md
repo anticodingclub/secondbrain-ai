@@ -8,7 +8,7 @@ grounded in your own files, with citations back to the exact page.
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
-> **This is a work in progress: 7 of 10 phases are built.** Being upfront so
+> **This is a work in progress: 8 of 10 phases are built.** Being upfront so
 > you know what you are cloning.
 
 ### What works today
@@ -27,12 +27,15 @@ grounded in your own files, with citations back to the exact page.
 - **Chat** — grounded answers streamed token by token, every claim carrying a
   citation back to the document, page and section it came from. Works with
   Ollama locally, or OpenAI, Anthropic and Gemini.
+- **Dashboard** — indexing progress, storage, chunk and vector counts, and
+  your own search history. Vector counts come from Qdrant rather than being
+  inferred, so the two stores drifting apart is visible rather than silent.
 
 ### What does not work yet
 
-Remaining: the analytics dashboard (8), GitHub repository import (9), and
-production deployment (10). The core product — index your documents, search
-them, ask questions and get cited answers — is complete.
+Remaining: GitHub repository import (9) and production deployment (10). The
+core product — index your documents, search them, ask questions and get cited
+answers — is complete.
 
 **Chat needs a language model.** Ollama is the default and runs locally, so
 chat works offline with nothing leaving your machine:
@@ -244,8 +247,8 @@ which keeps them order-independent and parallel-safe.
 | 5 | Chunking and embeddings — recursive chunking, batched embedding, incremental re-index | **Done** |
 | 6 | Search — hybrid dense + keyword with reciprocal rank fusion, filters | **Done** |
 | 7 | Chat — streaming RAG with citations, scoped conversations, history | **Done** |
-| 8 | Dashboard — storage, vector counts, search analytics | Next |
-| 9 | GitHub — clone, structure-aware code indexing, symbol search | |
+| 8 | Dashboard — storage, vector counts, search analytics | **Done** |
+| 9 | GitHub — clone, structure-aware code indexing, symbol search | Next |
 | 10 | Production — containers, migrations, observability, deployment | |
 
 ---

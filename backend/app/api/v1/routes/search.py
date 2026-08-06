@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.api.dependencies import CurrentUser, RetrievalServiceDep
+from app.api.dependencies import AnalyticsServiceDep, CurrentUser, RetrievalServiceDep
 from app.services.retrieval import SearchQuery
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -50,7 +50,10 @@ class SearchResponse(BaseModel):
 
 @router.post("", response_model=SearchResponse, summary="Search your documents")
 async def search(
-    payload: SearchRequest, current_user: CurrentUser, retrieval: RetrievalServiceDep
+    payload: SearchRequest,
+    current_user: CurrentUser,
+    retrieval: RetrievalServiceDep,
+    analytics: AnalyticsServiceDep,
 ) -> SearchResponse:
     started = time.perf_counter()
 
@@ -64,6 +67,18 @@ async def search(
             mode=payload.mode,
         ),
         owner_id=current_user.id,
+    )
+    took_ms = int((time.perf_counter() - started) * 1000)
+
+    # Recorded for the dashboard. Never raises — the user asked a question,
+    # not for bookkeeping, and a logging failure must not fail their search.
+    await analytics.record_search(
+        owner_id=current_user.id,
+        query=payload.query,
+        hit_count=len(hits),
+        took_ms=took_ms,
+        mode=payload.mode,
+        top_document_id=hits[0].document_id if hits else None,
     )
 
     return SearchResponse(
@@ -85,5 +100,5 @@ async def search(
             for hit in hits
         ],
         total=len(hits),
-        took_ms=int((time.perf_counter() - started) * 1000),
+        took_ms=took_ms,
     )

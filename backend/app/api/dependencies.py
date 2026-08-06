@@ -23,6 +23,7 @@ from app.repositories.conversation import ChatMessageRepository, ConversationRep
 from app.repositories.document import DocumentRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.user import UserRepository
+from app.services.analytics import AnalyticsService
 from app.services.auth import AuthService
 from app.services.chat import ChatService
 from app.services.embeddings import EmbeddingProvider
@@ -237,3 +238,13 @@ def get_chat_service(
 
 
 ChatServiceDep = Annotated[ChatService, Depends(get_chat_service)]
+
+
+# ── Analytics ────────────────────────────────────────────────────────────────
+
+
+def get_analytics_service(session: SessionDep) -> AnalyticsService:
+    return AnalyticsService(session=session)
+
+
+AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]

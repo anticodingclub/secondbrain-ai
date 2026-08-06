@@ -210,3 +210,47 @@ export interface ConversationSummary {
 export interface ConversationDetail extends ConversationSummary {
   messages: ChatMessage[];
 }
+
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+export interface Counted {
+  label: string;
+  count: number;
+}
+
+export interface RecentSearch {
+  query: string;
+  hit_count: number;
+  took_ms: number;
+  created_at: string;
+}
+
+export interface RecentDocument {
+  id: string;
+  title: string;
+  extension: string;
+  size_bytes: number;
+  status: DocumentStatus;
+  created_at: string;
+}
+
+export interface DashboardStats {
+  document_count: number;
+  indexed_count: number;
+  failed_count: number;
+  pending_count: number;
+  chunk_count: number;
+  vector_count: number;
+  total_bytes: number;
+  conversation_count: number;
+  message_count: number;
+  search_count: number;
+  searches_last_7_days: number;
+  median_search_ms: number;
+  indexing_progress: number;
+  by_extension: Counted[];
+  by_status: Counted[];
+  top_queries: Counted[];
+  recent_searches: RecentSearch[];
+  recent_documents: RecentDocument[];
+}
