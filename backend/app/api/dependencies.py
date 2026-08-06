@@ -29,6 +29,7 @@ from app.services.chat import ChatService
 from app.services.embeddings import EmbeddingProvider
 from app.services.indexing import IndexingService
 from app.services.parsing.pipeline import ParsingService
+from app.services.repositories import RepositoryImportService
 from app.services.retrieval import RetrievalService
 from app.services.storage import ObjectStorage
 from app.services.uploads import UploadService
@@ -248,3 +249,20 @@ def get_analytics_service(session: SessionDep) -> AnalyticsService:
 
 
 AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]
+
+
+# ── Repositories ─────────────────────────────────────────────────────────────
+
+
+def get_repository_import_service(container: ContainerDep) -> RepositoryImportService:
+    return RepositoryImportService(
+        session_factory=container.session_factory,
+        storage=container.object_storage,
+        parsing=get_parsing_service(container),
+        indexing=get_indexing_service(container),
+    )
+
+
+RepositoryImportServiceDep = Annotated[
+    RepositoryImportService, Depends(get_repository_import_service)
+]

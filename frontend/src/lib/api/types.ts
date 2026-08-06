@@ -254,3 +254,29 @@ export interface DashboardStats {
   recent_searches: RecentSearch[];
   recent_documents: RecentDocument[];
 }
+
+// ─── Repositories ───────────────────────────────────────────────────────────
+
+export type RepositoryStatus =
+  | "pending"
+  | "cloning"
+  | "importing"
+  | "ready"
+  | "failed";
+
+export interface RepositoryRecord {
+  id: string;
+  clone_url: string;
+  owner_name: string;
+  repo_name: string;
+  branch: string | null;
+  commit_sha: string | null;
+  status: RepositoryStatus;
+  error_message: string | null;
+  file_count: number;
+  skipped_count: number;
+  collection_id: string | null;
+  last_synced_at: string | null;
+  repo_metadata: Record<string, unknown>;
+  created_at: string;
+}

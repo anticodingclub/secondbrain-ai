@@ -31,6 +31,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Chat", icon: MessagesSquare, phase: 7, href: "/chat" },
   { label: "Documents", icon: Upload, phase: 3, href: "/documents" },
   { label: "Collections", icon: FolderTree, phase: 3 },
-  { label: "Repositories", icon: FolderGit2, phase: 9 },
+  { label: "Repositories", icon: FolderGit2, phase: 9, href: "/repositories" },
   { label: "Settings", icon: Settings, phase: 2, href: "/settings" },
 ];

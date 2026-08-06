@@ -13,6 +13,7 @@ from app.models.conversation import (
 )
 from app.models.document import Document, DocumentChunk, DocumentStatus, SourceType
 from app.models.refresh_token import RefreshToken
+from app.models.repository import Repository, RepositoryStatus
 from app.models.search_event import SearchEvent
 from app.models.user import User
 
@@ -27,6 +28,8 @@ __all__ = [
     "DocumentStatus",
     "MessageRole",
     "RefreshToken",
+    "Repository",
+    "RepositoryStatus",
     "SearchEvent",
     "SourceType",
     "User",

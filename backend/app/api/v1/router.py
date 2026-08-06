@@ -12,6 +12,7 @@ from app.api.v1.routes import (
     dashboard,
     documents,
     health,
+    repositories,
     search,
     system,
 )
@@ -24,3 +25,4 @@ api_router.include_router(documents.router)
 api_router.include_router(search.router)
 api_router.include_router(chat.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(repositories.router)
