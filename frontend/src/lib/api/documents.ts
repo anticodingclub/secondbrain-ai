@@ -54,6 +54,59 @@ export function documentContentUrl(id: string): string {
   return `${BASE_URL}/api/v1/documents/${id}/content`;
 }
 
+/**
+ * Open a document in a new tab.
+ *
+ * The content endpoint requires a Bearer token, and a plain `<a href>` sends
+ * no Authorization header — the access token lives in memory in JavaScript,
+ * deliberately, so the browser has nothing to attach. Linking straight to the
+ * URL therefore lands on `{"error": "unauthenticated"}` rather than the file.
+ *
+ * So the bytes are fetched with the token, wrapped in a blob URL, and handed
+ * to a tab. The tab is opened *before* the await: `window.open` after an
+ * asynchronous gap has lost the user-gesture context and is blocked as a
+ * popup in every current browser.
+ *
+ * The whole file is held in memory while it renders, which is fine for the
+ * documents people actually read and would not be for a multi-gigabyte
+ * archive. A signed short-lived URL — the way S3 solves this — is the answer
+ * if that ever matters.
+ */
+export async function openDocument(id: string): Promise<void> {
+  const tab = window.open("", "_blank");
+
+  try {
+    if (!getAccessToken()) await refreshAccessToken();
+
+    const response = await fetch(documentContentUrl(id), {
+      credentials: "include",
+      headers: getAccessToken()
+        ? { Authorization: `Bearer ${getAccessToken()}` }
+        : {},
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    if (tab) {
+      tab.location.href = url;
+    } else {
+      // Popup blocked despite the synchronous open — fall back to navigating
+      // this tab rather than silently doing nothing.
+      window.location.href = url;
+    }
+
+    // Freed once the tab has had time to load it. Revoking immediately would
+    // pull the file out from under the renderer before it reads it.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (cause) {
+    tab?.close();
+    throw cause;
+  }
+}
+
 export interface UploadOptions {
   file: File;
   collectionId?: string;

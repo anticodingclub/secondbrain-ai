@@ -12,7 +12,7 @@ import {
   getConversation,
   listConversations,
 } from "@/lib/api/chat";
-import { documentContentUrl } from "@/lib/api/documents";
+import { openDocument } from "@/lib/api/documents";
 import type { ChatCitation, ChatMessage } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -44,18 +44,17 @@ function WithCitationMarkers({
         if (!citation) return <span key={index}>{part}</span>;
 
         return (
-          <a
+          <button
             key={index}
-            href={documentContentUrl(citation.document_id)}
-            target="_blank"
-            rel="noreferrer"
+            type="button"
+            onClick={() => void openDocument(citation.document_id)}
             title={`${citation.document_title}${
               citation.page_number ? ` · page ${citation.page_number}` : ""
             }`}
             className="mx-0.5 rounded bg-accent/15 px-1.5 py-0.5 align-baseline text-[11px] font-medium text-accent transition-colors hover:bg-accent/25"
           >
             {number}
-          </a>
+          </button>
         );
       })}
     </>
@@ -71,12 +70,11 @@ function Sources({ citations }: { citations: ChatCitation[] }) {
         {citations.length === 1 ? "Source" : "Sources"}
       </p>
       {citations.map((citation) => (
-        <a
+        <button
           key={citation.chunk_id}
-          href={documentContentUrl(citation.document_id)}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-start gap-2.5 rounded-sb px-2 py-1.5 transition-colors hover:bg-surface-hover"
+          type="button"
+          onClick={() => void openDocument(citation.document_id)}
+          className="flex w-full items-start gap-2.5 rounded-sb px-2 py-1.5 text-left transition-colors hover:bg-surface-hover"
         >
           <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded bg-accent/15 text-[11px] font-medium text-accent">
             {citation.number}
@@ -97,7 +95,7 @@ function Sources({ citations }: { citations: ChatCitation[] }) {
               {citation.snippet}
             </span>
           </span>
-        </a>
+        </button>
       ))}
     </div>
   );

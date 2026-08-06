@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/client";
-import { documentContentUrl } from "@/lib/api/documents";
+import { openDocument } from "@/lib/api/documents";
 import { search } from "@/lib/api/search";
 import type { SearchHit, SearchMode, SearchResponse } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -75,16 +75,15 @@ function HitCard({ hit, query }: { hit: SearchHit; query: string }) {
           </span>
 
           <div className="min-w-0 flex-1">
-            {/* A plain anchor, not next/link: this points at the API host,
-                and typedRoutes only knows about routes in this app. */}
-            <a
-              href={documentContentUrl(hit.document_id)}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate text-sm font-medium hover:text-accent"
+            {/* A button, not a link: the content endpoint needs a Bearer
+                token that a plain navigation cannot carry. */}
+            <button
+              type="button"
+              onClick={() => void openDocument(hit.document_id)}
+              className="block max-w-full truncate text-left text-sm font-medium hover:text-accent"
             >
               {hit.document_title || hit.filename}
-            </a>
+            </button>
             {location && <p className="mt-0.5 text-xs text-subtle">{location}</p>}
           </div>
 

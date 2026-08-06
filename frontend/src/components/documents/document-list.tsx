@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteDocument } from "@/hooks/use-documents";
-import { documentContentUrl } from "@/lib/api/documents";
+import { openDocument } from "@/lib/api/documents";
 import type { DocumentRecord, DocumentStatus } from "@/lib/api/types";
 import { formatBytes, formatRelativeTime } from "@/lib/format";
 
@@ -57,15 +57,14 @@ function DocumentRow({ document }: { document: DocumentRecord }) {
       </Badge>
 
       <div className="flex shrink-0 items-center gap-1">
-        <a
-          href={documentContentUrl(document.id)}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={() => void openDocument(document.id)}
           aria-label={`Open ${document.title}`}
           className="rounded p-1.5 text-subtle transition-colors hover:bg-surface hover:text-foreground"
         >
           <Download className="size-4" />
-        </a>
+        </button>
 
         {confirming ? (
           <span className="flex items-center gap-1">
