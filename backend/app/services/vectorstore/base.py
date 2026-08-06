@@ -63,6 +63,16 @@ class VectorStore(ABC):
     ) -> list[SearchHit]: ...
 
     @abstractmethod
+    async def drop_collection(self) -> None:
+        """Delete the collection entirely.
+
+        Needed because a collection is fixed to one vector size at creation:
+        switching embedding model — bge-small's 384 dimensions to bge-large's
+        1024 — cannot be done in place. Without this the only remedy is
+        deleting the storage directory by hand.
+        """
+
+    @abstractmethod
     async def delete_by_document(self, document_id: uuid.UUID) -> None: ...
 
     @abstractmethod

@@ -8,8 +8,8 @@ grounded in your own files, with citations back to the exact page.
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
-> **This is a work in progress: 9 of 10 phases are built.** Being upfront so
-> you know what you are cloning.
+> **All 10 phases are built.** Upload documents and code, search them in plain
+> language, and get answers with citations back to the exact page.
 
 ### What works today
 
@@ -34,11 +34,7 @@ grounded in your own files, with citations back to the exact page.
   code. Vendored trees, lockfiles, build output and binaries are skipped so
   they cannot drown real source in the index.
 
-### What does not work yet
-
-Remaining: production deployment (10). The
-core product — index your documents, search them, ask questions and get cited
-answers — is complete.
+### What you need to supply
 
 **Chat needs a language model.** Ollama is the default and runs locally, so
 chat works offline with nothing leaving your machine:
@@ -194,21 +190,48 @@ Production configuration is validated at startup, not discovered at runtime:
 booting with `ENVIRONMENT=production` while still holding the placeholder
 secret key, or a SQLite URL, fails immediately with a clear message.
 
-### Moving to the production stack
+### Running the production stack
+
+Postgres, Qdrant, the API and the web app, in one command:
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d
+SECONDBRAIN_SECRET_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(48))") docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-Then point the backend at those services and re-run migrations:
+Then open http://localhost:3000. Migrations are applied by the backend
+container on start, so a fresh database needs no extra step.
 
-```bash
-SECONDBRAIN_DATABASE_URL=postgresql+asyncpg://secondbrain:secondbrain@localhost:5432/secondbrain
-SECONDBRAIN_QDRANT_URL=http://localhost:6333
-```
+The secret key is not optional. Compose refuses to start without it, and the
+application refuses to boot in production with the placeholder or with
+anything under 32 characters — a signing key someone typed by hand is short
+enough to brute-force offline, and every session token becomes forgeable once
+it is found, with no symptom until it is.
 
-No application code changes — the dual-dialect models and the URL-driven Qdrant
-client already handle both.
+No application code changes are needed to move between the two stacks: the
+dual-dialect models and the URL-driven Qdrant client already handle both. That
+is verified rather than asserted — CI runs the whole test suite a second time
+against real Postgres and a real Qdrant server, because the SQLite path is the
+only one a developer ever exercises by hand.
+
+### Deployment notes
+
+**Chat needs a model reachable from inside the container.** The compose file
+points Ollama at `host.docker.internal`, so a model running on the host works
+as-is. For a hosted provider, set `SECONDBRAIN_LLM_PROVIDER` and the API key.
+
+**The frontend's API URL is baked in at build time.** Next.js inlines
+`NEXT_PUBLIC_*` into the client bundle, so deploying behind a different
+hostname means rebuilding the frontend image with `NEXT_PUBLIC_API_URL` set,
+not changing an environment variable at runtime.
+
+**Uploads and the model cache live in a volume.** Without `backend_data`
+mounted, every rebuild re-downloads the embedding model and loses every
+uploaded file.
+
+**Migrations run on container start.** Convenient for one instance, and the
+wrong place for them with several replicas — Alembic takes a lock so the
+losers wait rather than corrupting anything, but at that point migrations
+belong in a deploy step of their own.
 
 ### Upgrading embedding quality
 
@@ -252,7 +275,7 @@ which keeps them order-independent and parallel-safe.
 | 7 | Chat — streaming RAG with citations, scoped conversations, history | **Done** |
 | 8 | Dashboard — storage, vector counts, search analytics | **Done** |
 | 9 | GitHub — clone, filter and index repository code | **Done** |
-| 10 | Production — containers, migrations, observability, deployment | Next |
+| 10 | Production — containers, migrations, deployment, Postgres CI | **Done** |
 
 ---
 

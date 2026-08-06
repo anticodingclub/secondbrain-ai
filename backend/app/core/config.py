@@ -9,6 +9,10 @@ from pathlib import Path
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+#: HS256 signs with a SHA-256 HMAC, so a key shorter than the 32-byte hash
+#: output adds no strength beyond its own length.
+MIN_SECRET_KEY_LENGTH = 32
+
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_ROOT.parent
 
@@ -155,7 +159,24 @@ class Settings(BaseSettings):
     def _guard_production_defaults(self) -> Settings:
         if self.environment is Environment.PRODUCTION:
             if self.secret_key.startswith("change-me"):
-                raise ValueError("SECONDBRAIN_SECRET_KEY must be set in production")
+                raise ValueError(
+                    "SECONDBRAIN_SECRET_KEY must be set in production. "
+                    'Generate one with: python -c "import secrets; '
+                    'print(secrets.token_urlsafe(48))"'
+                )
+            # Rejecting only the placeholder is not enough. A key someone
+            # typed by hand is short enough to brute-force offline, and every
+            # session token in existence is forgeable once it is found — with
+            # no symptom beforehand, because everything works perfectly until
+            # it is discovered.
+            if len(self.secret_key) < MIN_SECRET_KEY_LENGTH:
+                raise ValueError(
+                    f"SECONDBRAIN_SECRET_KEY must be at least "
+                    f"{MIN_SECRET_KEY_LENGTH} characters in production; "
+                    f"got {len(self.secret_key)}. "
+                    'Generate one with: python -c "import secrets; '
+                    'print(secrets.token_urlsafe(48))"'
+                )
             if self.database_url.startswith("sqlite"):
                 raise ValueError("SQLite is not supported in production; use PostgreSQL")
         return self

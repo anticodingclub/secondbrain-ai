@@ -1,11 +1,12 @@
-# Production-parity stack. Not required for local development — the backend
-# defaults to SQLite plus embedded Qdrant so the app runs with zero installs.
+# The full production-parity stack: Postgres, Qdrant, the API and the web app.
 #
-#   docker compose -f docker/docker-compose.yml up -d
+#   docker compose -f docker/docker-compose.yml up -d --build
 #
-# Then point the backend at these services:
-#   SECONDBRAIN_DATABASE_URL=postgresql+asyncpg://secondbrain:secondbrain@localhost:5432/secondbrain
-#   SECONDBRAIN_QDRANT_URL=http://localhost:6333
+# Then open http://localhost:3000.
+#
+# Local development does not need any of this — the backend defaults to SQLite
+# plus an embedded Qdrant, so `make dev-backend` runs with zero installs. This
+# file is for running against the databases production would actually use.
 
 name: secondbrain
 
@@ -17,11 +18,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-secondbrain}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secondbrain}
       POSTGRES_DB: ${POSTGRES_DB:-secondbrain}
-      # C collation makes B-tree index comparisons meaningfully faster and
-      # avoids the glibc-version index-corruption class of problems.
+      # C collation makes B-tree comparisons meaningfully faster and avoids
+      # the glibc-version index-corruption class of problem.
       POSTGRES_INITDB_ARGS: "--data-checksums --locale=C --encoding=UTF8"
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -34,37 +33,69 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.12.5
     restart: unless-stopped
-    ports:
-      - "${QDRANT_HTTP_PORT:-6333}:6333"
-      - "${QDRANT_GRPC_PORT:-6334}:6334"
     volumes:
       - qdrant_data:/qdrant/storage
     environment:
       QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
       QDRANT__STORAGE__PERFORMANCE__MAX_OPTIMIZATION_THREADS: 2
     healthcheck:
+      # The image has no curl, so a bare TCP connect is the portable probe.
       test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
-  redis:
-    # Broker for the background indexing workers (Phase 3+) and the query cache.
-    image: redis:7-alpine
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
     restart: unless-stopped
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly yes
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
+    # Both stores must be accepting connections first, or the first request
+    # fails on a database that is still initialising.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    environment:
+      SECONDBRAIN_ENVIRONMENT: production
+      SECONDBRAIN_DATABASE_URL: >-
+        postgresql+asyncpg://${POSTGRES_USER:-secondbrain}:${POSTGRES_PASSWORD:-secondbrain}@postgres:5432/${POSTGRES_DB:-secondbrain}
+      SECONDBRAIN_QDRANT_URL: http://qdrant:6333
+      SECONDBRAIN_QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      # Refused at startup if left as the placeholder — see Settings.
+      SECONDBRAIN_SECRET_KEY: ${SECONDBRAIN_SECRET_KEY:?set a real secret key, e.g. python -c "import secrets; print(secrets.token_urlsafe(48))"}
+      SECONDBRAIN_CORS_ORIGINS: ${SECONDBRAIN_CORS_ORIGINS:-http://localhost:3000}
+      SECONDBRAIN_STORAGE_PATH: /data/storage
+      # Ollama on the host, reachable from inside the container.
+      SECONDBRAIN_OLLAMA_BASE_URL: ${SECONDBRAIN_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      SECONDBRAIN_LLM_MODEL: ${SECONDBRAIN_LLM_MODEL:-llama3.1}
+      HF_HOME: /data/models
     volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      # Uploaded files and the embedding model cache. Without this the model
+      # is re-downloaded on every container rebuild.
+      - backend_data:/data
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+      args:
+        # Baked in at build time: Next.js inlines NEXT_PUBLIC_* into the
+        # client bundle, so it cannot be changed by an env var at runtime.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
 
 volumes:
   postgres_data:
   qdrant_data:
-  redis_data:
+  backend_data:

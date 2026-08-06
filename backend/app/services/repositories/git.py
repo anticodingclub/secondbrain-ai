@@ -206,9 +206,7 @@ def _explain_clone_failure(ref: RepositoryRef, stderr: str) -> str:
 
 async def _head_commit(repository: Path) -> str:
     try:
-        completed = await _run(
-            ["git", "-C", str(repository), "rev-parse", "HEAD"], timeout=30
-        )
+        completed = await _run(["git", "-C", str(repository), "rev-parse", "HEAD"], timeout=30)
         return completed.stdout.decode().strip()
     except (subprocess.TimeoutExpired, OSError):
         # Not fatal: the clone succeeded, we simply cannot label it. Re-sync

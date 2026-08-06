@@ -41,6 +41,13 @@ COPY --from=deps /install /usr/local
 # process you want unprivileged.
 RUN useradd --create-home --uid 10001 secondbrain
 COPY --chown=secondbrain:secondbrain backend/ /app/
+COPY --chown=secondbrain:secondbrain docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Uploaded files and the model cache live here, mounted as a volume so they
+# survive a rebuild. Created before dropping privileges.
+RUN mkdir -p /data/storage /data/models && chown -R secondbrain:secondbrain /data
+
 USER secondbrain
 
 EXPOSE 8000
@@ -48,4 +55,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://localhost:8000/api/v1/health || exit 1
 
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# Migrations run first — see entrypoint.sh.
+CMD ["/app/entrypoint.sh"]

@@ -82,6 +82,67 @@ jobs:
         working-directory: backend
         run: pytest -m slow -q
 
+  postgres:
+    name: Production stack (Postgres + Qdrant)
+    runs-on: ubuntu-latest
+
+    # The whole point of this job. Everything else runs on SQLite and an
+    # embedded Qdrant, so the dual-dialect models, the UTCDateTime decorator
+    # and the JSONB variants are only ever exercised on the development
+    # backend. Without this, "it also works on Postgres" is a claim rather
+    # than a fact.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: secondbrain
+          POSTGRES_PASSWORD: secondbrain
+          POSTGRES_DB: secondbrain
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U secondbrain"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+
+      qdrant:
+        image: qdrant/qdrant:v1.12.5
+        ports: ["6333:6333"]
+
+    env:
+      SECONDBRAIN_DATABASE_URL: postgresql+asyncpg://secondbrain:secondbrain@localhost:5432/secondbrain
+      SECONDBRAIN_QDRANT_URL: http://localhost:6333
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install
+        run: pip install -e "backend[dev,embeddings-fast]" asyncpg
+
+      - name: Wait for Qdrant
+        run: |
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:6333/readyz && exit 0
+            sleep 2
+          done
+          echo "Qdrant did not become ready" && exit 1
+
+      - name: Apply migrations against Postgres
+        working-directory: backend
+        run: alembic upgrade head
+
+      - name: Confirm the schema matches the models on Postgres
+        working-directory: backend
+        run: alembic check
+
+      - name: Run the suite against the production stack
+        working-directory: backend
+        run: pytest -q
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

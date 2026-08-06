@@ -202,6 +202,19 @@ class QdrantVectorStore(VectorStore):
             wait=True,
         )
 
+    async def drop_collection(self) -> None:
+        """Delete the collection and forget that it was ensured.
+
+        Clearing `_ensured` matters: the next `ensure_collection` must
+        actually recreate it rather than trusting a cached flag about a
+        collection that no longer exists.
+        """
+        async with self._lock:
+            if await self._client.collection_exists(self._collection):
+                await self._client.delete_collection(self._collection)
+            self._ensured = False
+        logger.info("qdrant_collection_dropped", collection=self._collection)
+
     async def delete_by_document(self, document_id: uuid.UUID) -> None:
         await self._delete_where("document_id", str(document_id))
 

@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, String
+from sqlalchemy import Boolean, ForeignKey, Index, String, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Entity, UTCDateTime, UUIDType
@@ -56,7 +56,7 @@ class RefreshToken(Entity):
 
     #: Denormalised so revoking a whole family is one UPDATE rather than a
     #: read-modify-write over every row.
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
 
     user: Mapped[User] = relationship()
 

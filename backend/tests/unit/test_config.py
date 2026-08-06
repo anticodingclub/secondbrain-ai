@@ -41,7 +41,7 @@ def test_production_rejects_sqlite() -> None:
         Settings(  # type: ignore[call-arg]
             _env_file=None,
             environment=Environment.PRODUCTION,
-            secret_key="a-real-secret",
+            secret_key="a-real-secret-long-enough-for-production-use",
             database_url="sqlite+aiosqlite:///./data/x.db",
         )
 
@@ -50,7 +50,7 @@ def test_production_accepts_a_valid_configuration() -> None:
     settings = Settings(  # type: ignore[call-arg]
         _env_file=None,
         environment=Environment.PRODUCTION,
-        secret_key="a-real-secret",
+        secret_key="a-real-secret-long-enough-for-production-use",
         database_url="postgresql+asyncpg://u:p@db:5432/sb",
     )
     assert not settings.is_sqlite
