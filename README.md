@@ -4,7 +4,7 @@ A local-first personal search engine. Index everything you own — documents,
 code, notes, images — then ask questions in plain language and get answers
 grounded in your own files, with citations back to the exact page.
 
-[![CI](https://github.com/USERNAME/secondbrain-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/secondbrain-ai/actions/workflows/ci.yml)
+[![CI](https://github.com/anticodingclub/secondbrain-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/anticodingclub/secondbrain-ai/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue.svg)](https://www.python.org/)
 
@@ -63,7 +63,7 @@ embedded Qdrant, so setup is two commands and everything stays on your machine.
 **Requirements:** Python 3.11–3.14 and Node.js 20.9+.
 
 ```bash
-git clone https://github.com/USERNAME/secondbrain-ai.git && cd secondbrain-ai
+git clone https://github.com/anticodingclub/secondbrain-ai.git && cd secondbrain-ai
 ```
 
 ```bash

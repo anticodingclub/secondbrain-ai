@@ -17,13 +17,16 @@ Changing the password revokes every refresh token for that user, matching what
 a real password change must do: sessions opened with the old credential stop
 working.
 
-    python scripts/dev_account.py --email dushya@example.com --name Dushya \
-        --password 4963 --replaces ada@example.com
+    python scripts/dev_account.py --email you@example.com --name "Your Name" \
+        --password your-dev-password
 
-The address still has to satisfy the app's own validation, which rejects
-bare hostnames (``dushya@local``) and special-use domains (``.test``,
-``.local``, ``.invalid``). ``example.com`` is IANA-reserved for documentation,
-so it can never be a real mailbox while remaining a valid one.
+The address still has to satisfy the app's own validation, which rejects bare
+hostnames (``you@localhost``) and special-use domains (``.test``, ``.local``,
+``.invalid``). ``example.com`` is IANA-reserved for documentation, so it can
+never be a real mailbox while remaining a valid one.
+
+Pass ``--replaces old@example.com`` to rename an existing account in place,
+keeping the documents already attached to it.
 """
 
 from __future__ import annotations
